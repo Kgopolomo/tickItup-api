@@ -29,6 +29,8 @@ public class Event {
 
     private String image;
 
+    private String description;
+
     @NotNull
     @Future
     private LocalDateTime startDateTime;
@@ -37,11 +39,16 @@ public class Event {
     @Future
     private LocalDateTime endDateTime;
 
-    @NotBlank
-    private String location;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "location_id", referencedColumnName = "id")
+    private Location location;
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Ticket> tickets = new ArrayList<>();
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "event_detail_id", referencedColumnName = "id")
+    private EventDetail eventDetail;
 
 
     @NotNull

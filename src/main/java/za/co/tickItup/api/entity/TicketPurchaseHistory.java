@@ -9,8 +9,6 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
-@Getter
-@Setter
 @NoArgsConstructor
 @Table(name = "ticket_purchase_history")
 public class TicketPurchaseHistory {
@@ -29,12 +27,66 @@ public class TicketPurchaseHistory {
     @Column(name = "purchase_date")
     private LocalDateTime purchaseDate;
 
-    @Column(name = "ticket_type")
-    private String ticketType;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "ticket_id", referencedColumnName = "id")
+    private Ticket ticket;
 
     @NotNull
     private String qrcode;
 
     @Column(name = "ticket_status")
     private String ticketStatus;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public UserProfile getUserProfile() {
+        return userProfile;
+    }
+
+    public void setUserProfile(UserProfile userProfile) {
+        this.userProfile = userProfile;
+    }
+
+
+    public void setEvent(Event event) {
+        this.event = event;
+    }
+
+    public LocalDateTime getPurchaseDate() {
+        return purchaseDate;
+    }
+
+    public void setPurchaseDate(LocalDateTime purchaseDate) {
+        this.purchaseDate = purchaseDate;
+    }
+
+    public Ticket getTicket() {
+        return ticket;
+    }
+
+    public void setTicket(Ticket ticket) {
+        this.ticket = ticket;
+    }
+
+    public String getQrcode() {
+        return qrcode;
+    }
+
+    public void setQrcode(String qrcode) {
+        this.qrcode = qrcode;
+    }
+
+    public String getTicketStatus() {
+        return ticketStatus;
+    }
+
+    public void setTicketStatus(String ticketStatus) {
+        this.ticketStatus = ticketStatus;
+    }
 }

@@ -11,8 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import za.co.tickItup.api.entity.TicketPurchaseHistory;
+import za.co.tickItup.api.request.CartRequest;
 import za.co.tickItup.api.service.TicketPurchaseHistoryService;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -25,7 +27,7 @@ public class TicketPurchaseController {
     @GetMapping("/{userId}")
     @Operation(summary = "Get ticket purchase history for user", description = "Retrieve a list of ticket purchases for a given user ID")
     @ApiResponse(responseCode = "200", description = "List of ticket purchases returned successfully", content = @Content(schema = @Schema(implementation = TicketPurchaseHistory.class)))
-    public ResponseEntity<List<TicketPurchaseHistory>> getPurchaseHistoryForUser(
+    public ResponseEntity<Object> getPurchaseHistoryForUser(
             @Parameter(description = "User ID") @PathVariable Long userId) {
         List<TicketPurchaseHistory> ticketPurchases = ticketPurchaseHistoryService.getPurchaseHistoryForUser(userId);
         return new ResponseEntity<>(ticketPurchases, HttpStatus.OK);
@@ -41,15 +43,11 @@ public class TicketPurchaseController {
         return new ResponseEntity<>(ticketPurchase, HttpStatus.OK);
     }
 
-    @PostMapping("/{userId}/{eventId}")
+    @PostMapping
     @Operation(summary = "Purchase a ticket", description = "Purchase a ticket for a given user ID and event ID")
     @ApiResponse(responseCode = "200", description = "Ticket purchase successful", content = @Content(schema = @Schema(implementation = TicketPurchaseHistory.class)))
-    public ResponseEntity<TicketPurchaseHistory> purchaseTicket(
-            @Parameter(description = "User ID") @PathVariable Long userId,
-            @Parameter(description = "Event ID") @PathVariable Long eventId,
-            @Parameter(description = "Ticket type name") @RequestParam String ticketType,
-            @Parameter(description = "Ticket quantity") @RequestParam int quantity) {
-        TicketPurchaseHistory ticketPurchase = ticketPurchaseHistoryService.purchaseTicket(userId, eventId, ticketType, quantity);
+    public ResponseEntity<TicketPurchaseHistory> purchaseTicket(@Valid @RequestBody CartRequest cartRequest) {
+        TicketPurchaseHistory ticketPurchase = ticketPurchaseHistoryService.purchaseTicket(cartRequest);
         return new ResponseEntity<>(ticketPurchase, HttpStatus.OK);
     }
 

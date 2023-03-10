@@ -47,6 +47,9 @@ public class UserProfile {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
+
+
     @OneToMany(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
+
     private List<PaymentOption> paymentOptions = new ArrayList<>();
 }

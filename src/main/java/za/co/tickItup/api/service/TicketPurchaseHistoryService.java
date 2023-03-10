@@ -3,13 +3,12 @@ package za.co.tickItup.api.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import za.co.tickItup.api.entity.*;
-import za.co.tickItup.api.repository.EventRepository;
-import za.co.tickItup.api.repository.TicketPurchaseHistoryRepository;
-import za.co.tickItup.api.repository.TicketRepository;
-import za.co.tickItup.api.repository.TicketTypeRepository;
+import za.co.tickItup.api.repository.*;
+import za.co.tickItup.api.request.CartRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,10 +30,13 @@ public class TicketPurchaseHistoryService {
 
     @Autowired private TicketRepository ticketRepository;
 
+    @Autowired private PaymentOptionRepository paymentOptionRepository;
+
 
     public List<TicketPurchaseHistory> getPurchaseHistoryForUser(Long userId) {
         UserProfile user = userService.getProfile(userId);
-        return ticketPurchaseHistoryRepository.findByUserProfile(user);
+        List<TicketPurchaseHistory> byUserProfile = ticketPurchaseHistoryRepository.findByUserProfile(user);
+        return byUserProfile;
     }
 
     public TicketPurchaseHistory getTicketPurchaseHistory(Long userId, Long eventId) {
@@ -43,13 +45,16 @@ public class TicketPurchaseHistoryService {
         return ticketPurchaseHistoryRepository.findByUserProfileAndEvent(user, event);
     }
 
-    public TicketPurchaseHistory purchaseTicket(Long userId, Long eventId, String ticketType, int quantity) {
-        UserProfile user = userService.getProfile(userId);
-        Event event = eventService.getEventById(eventId);
+    public TicketPurchaseHistory purchaseTicket(CartRequest cartRequest) {
+        UserProfile user = userService.getProfile(cartRequest.getUserId());
+        Event event = eventService.getEventById(cartRequest.getEventId());
+        Ticket ticketType = ticketRepository.findByCode(cartRequest.getTicketCode()).get();
+        PaymentOption paymentOption =  paymentOptionRepository.findByUserProfile(user);
+
 
         TicketType requestedTicketType = null;
         for (Ticket ticketTypeObj : event.getTickets()) {
-            if (ticketTypeObj.getTicketType().getName().equals(ticketType)) {
+            if (ticketTypeObj.getCode().equals(cartRequest.getTicketCode())) {
                 requestedTicketType = ticketTypeObj.getTicketType();
                 break;
             }
@@ -60,11 +65,11 @@ public class TicketPurchaseHistoryService {
         }
 
         int availableQuantity = requestedTicketType.getQuantity();
-        if (quantity > availableQuantity) {
+        if (cartRequest.getQuantity() > availableQuantity) {
             throw new IllegalArgumentException("Requested quantity not available");
         }
 
-        requestedTicketType.setQuantity(availableQuantity - quantity);
+        requestedTicketType.setQuantity(availableQuantity - cartRequest.getQuantity());
         ticketTypeRepository.save(requestedTicketType);
 
         if (requestedTicketType.getQuantity() == 0) {
@@ -84,7 +89,7 @@ public class TicketPurchaseHistoryService {
         ticketPurchaseHistory.setEvent(event);
         ticketPurchaseHistory.setQrcode(generateTicketCode());
         ticketPurchaseHistory.setPurchaseDate(LocalDateTime.now());
-        ticketPurchaseHistory.setTicketType(ticketType);
+        ticketPurchaseHistory.setTicket(ticketType);
         ticketPurchaseHistory.setTicketStatus("ACTIVE");
 
         return ticketPurchaseHistoryRepository.save(ticketPurchaseHistory);

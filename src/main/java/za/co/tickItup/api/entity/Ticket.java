@@ -68,4 +68,5 @@ public class Ticket {
     public void setEvent(Event event) {
         this.event = event;
     }
+
 }

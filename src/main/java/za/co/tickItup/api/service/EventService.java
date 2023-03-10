@@ -4,8 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import za.co.tickItup.api.entity.Event;
 import za.co.tickItup.api.entity.Ticket;
-import za.co.tickItup.api.entity.TicketType;
+import za.co.tickItup.api.repository.EventDetailRepository;
 import za.co.tickItup.api.repository.EventRepository;
+import za.co.tickItup.api.repository.LocationRepository;
 import za.co.tickItup.api.repository.TicketTypeRepository;
 
 import javax.persistence.EntityNotFoundException;
@@ -22,6 +23,10 @@ public class EventService {
 
      @Autowired private TicketService ticketService;
 
+     @Autowired private LocationRepository locationRepository;
+
+     @Autowired private EventDetailRepository eventDetailRepository;
+
     public Event createEvent(Event event) {
 
         // Check if event with same name and date-time already exists
@@ -29,6 +34,16 @@ public class EventService {
         if (!events.isEmpty()) {
             throw new IllegalArgumentException("Event with same name and start date-time already exists");
         }
+
+        int ticketCount = 0;
+        for (Ticket ticket : event.getTickets()) {
+            ticketCount += ticket.getTicketType().getQuantity();
+        }
+
+        if (ticketCount >= event.getCapacity()) {
+            throw new IllegalArgumentException("Tickets are more then event capacity");
+        }
+
         Event savedEvent = eventRepository.save(event);
         for (Ticket ticket : event.getTickets()) {
             ticket.setCode(generateTicketCode());
@@ -37,9 +52,9 @@ public class EventService {
             ticket.setTicketType(ticketTypeRepository.save(ticket.getTicketType()));
 
         }
+        locationRepository.save(event.getLocation());
+        eventDetailRepository.save(savedEvent.getEventDetail());
 
-//        ticketService.createTickets(event.getTickets(),savedEvent);
-        // Send confirmation email to organizer
         return savedEvent;
     }
 

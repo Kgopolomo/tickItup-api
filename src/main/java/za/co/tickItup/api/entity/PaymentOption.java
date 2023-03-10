@@ -31,7 +31,7 @@ public class PaymentOption {
     private int expiryYear;
 
     @Column(name = "cvv")
-    private int cvv;
+    private String cvv;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_profile_id", nullable = false)
