@@ -21,10 +21,7 @@ import za.co.tickItup.api.request.LoginRequest;
 import za.co.tickItup.api.response.JwtAuthenticationResponse;
 import za.co.tickItup.api.utils.JWTUtil;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class UserProfileService implements UserDetailsService {
@@ -97,15 +94,20 @@ public class UserProfileService implements UserDetailsService {
         if (userProfile.getUsername() == null || userProfile.getPassword() == null || userProfile.getEmail() == null) {
             throw new IllegalArgumentException("Username and password cannot be null");
         }
+
         if (userProfileRepository.existsByUsername(userProfile.getUsername())) {
             throw new IllegalArgumentException("User with username " + userProfile.getUsername() + " already exists");
         }
 
+
         // Set default user role to ROLE_USER
-        Role role = new Role();
-        role.setName(RoleName.ROLE_USER);
-        roleRepository.save(role);
-        userProfile.setRoles(Collections.singleton(role));
+        Role userRole = new Role();
+        userRole.setName(RoleName.ROLE_USER);
+        Set<Role> role =new HashSet<>();
+        role.add(userRole);
+        userProfile.setRoles(role);
+        roleRepository.save(userRole);
+
 
 
         // Encrypt user password before storing in database
@@ -134,5 +136,9 @@ public class UserProfileService implements UserDetailsService {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         UserProfile profile = userProfileRepository.findByUsername(userDetails.getUsername());
         return profile;
+    }
+
+    public UserProfile getUserProfile(String username) {
+        return  userProfileRepository.findByUsername(username);
     }
 }

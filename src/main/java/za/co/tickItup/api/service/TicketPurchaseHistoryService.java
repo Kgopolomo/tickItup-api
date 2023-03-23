@@ -32,6 +32,8 @@ public class TicketPurchaseHistoryService {
 
     @Autowired private PaymentOptionRepository paymentOptionRepository;
 
+    @Autowired private PaymentOptionService paymentOptionService;
+
 
     public List<TicketPurchaseHistory> getPurchaseHistoryForUser(Long userId) {
         UserProfile user = userService.getProfile(userId);
@@ -51,7 +53,11 @@ public class TicketPurchaseHistoryService {
         Ticket ticketType = ticketRepository.findByCode(cartRequest.getTicketCode()).get();
         PaymentOption paymentOption =  paymentOptionRepository.findByUserProfile(user);
 
+        // Decrypt card number and cvv
+        paymentOption.setCvv(paymentOptionService.decrypt(paymentOption.getCvv()));
+        paymentOption.setCardNumber(paymentOptionService.decrypt(paymentOption.getCardNumber()));
 
+        // Get ticket type from event tickets
         TicketType requestedTicketType = null;
         for (Ticket ticketTypeObj : event.getTickets()) {
             if (ticketTypeObj.getCode().equals(cartRequest.getTicketCode())) {
@@ -60,18 +66,22 @@ public class TicketPurchaseHistoryService {
             }
         }
 
+        // Check if ticket type exists
         if (requestedTicketType == null) {
             throw new IllegalArgumentException("Invalid ticket type");
         }
 
+        // Check if requested quantity is available
         int availableQuantity = requestedTicketType.getQuantity();
         if (cartRequest.getQuantity() > availableQuantity) {
             throw new IllegalArgumentException("Requested quantity not available");
         }
 
+        // Deduct requested quantity from ticket type's available quantity
         requestedTicketType.setQuantity(availableQuantity - cartRequest.getQuantity());
         ticketTypeRepository.save(requestedTicketType);
 
+        // Update ticket status to "Sold Out" if all tickets of a particular type are sold
         if (requestedTicketType.getQuantity() == 0) {
             TicketType finalRequestedTicketType = requestedTicketType;
             List<Ticket> tickets = event.getTickets().stream()
@@ -84,20 +94,22 @@ public class TicketPurchaseHistoryService {
             });
         }
 
-        TicketPurchaseHistory ticketPurchaseHistory = new TicketPurchaseHistory();
-        ticketPurchaseHistory.setUserProfile(user);
-        ticketPurchaseHistory.setEvent(event);
-        ticketPurchaseHistory.setQrcode(generateTicketCode());
-        ticketPurchaseHistory.setPurchaseDate(LocalDateTime.now());
-        ticketPurchaseHistory.setTicket(ticketType);
-        ticketPurchaseHistory.setTicketStatus("ACTIVE");
 
-        return ticketPurchaseHistoryRepository.save(ticketPurchaseHistory);
+            TicketPurchaseHistory ticketPurchaseHistory = new TicketPurchaseHistory();
+            ticketPurchaseHistory.setUserProfile(user);
+            ticketPurchaseHistory.setEvent(event);
+            ticketPurchaseHistory.setQrcode(generateTicketCode());
+            ticketPurchaseHistory.setPurchaseDate(LocalDateTime.now());
+            ticketPurchaseHistory.setTicket(ticketType);
+            ticketPurchaseHistory.setTicketStatus(String.valueOf(TicketStatus.ACTIVE));
+
+            return ticketPurchaseHistoryRepository.save(ticketPurchaseHistory);
+
     }
 
     public TicketPurchaseHistory requestRefund(Long userId, Long eventId) {
         TicketPurchaseHistory ticketPurchaseHistory = getTicketPurchaseHistory(userId, eventId);
-        ticketPurchaseHistory.setTicketStatus("REFUND_REQUESTED");
+        ticketPurchaseHistory.setTicketStatus(String.valueOf(TicketStatus.REFUND_REQUESTED));
         return ticketPurchaseHistoryRepository.save(ticketPurchaseHistory);
     }
 

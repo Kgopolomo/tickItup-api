@@ -1,6 +1,7 @@
 package za.co.tickItup.api.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import za.co.tickItup.api.entity.PaymentOption;
@@ -10,6 +11,7 @@ import za.co.tickItup.api.repository.UserProfileRepository;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -18,6 +20,8 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
 
+import static ch.qos.logback.core.encoder.ByteArrayUtil.hexStringToByteArray;
+
 @Service
 public class PaymentOptionService {
 
@@ -25,6 +29,11 @@ public class PaymentOptionService {
     private static final String AES_TRANSFORMATION = "AES";
 
     private static final int KEY_SIZE = 256;
+    @Value("${aes.key}")
+    private String aesKey;
+
+
+
     private static Key generateKey() {
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance(AES_ALGORITHM);
@@ -36,12 +45,9 @@ public class PaymentOptionService {
         }
     }
 
-//    /ECB/PKCS5Padding
+
+
     private static final Key ENCRYPTION_KEY = generateKey();
-
-
-
-
 
     @Autowired private UserProfileRepository userProfileRepository;
 
@@ -52,10 +58,9 @@ public class PaymentOptionService {
         UserProfile user = userProfileRepository.findById(5L)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + 5L));
 
-        String encryptedCardNumber = encrypt(paymentOption.getCardNumber());
-        String encryptedCvv = encrypt(String.valueOf(paymentOption.getCvv())); // Encrypt CVV
-        paymentOption.setCardNumber(encryptedCardNumber);
-        paymentOption.setCvv(encryptedCvv); // Convert decrypted CVV back to integer
+
+        paymentOption.setCardNumber(paymentOption.getCardNumber());
+        paymentOption.setCvv(paymentOption.getCvv());
         paymentOption.setUserProfile(user);
 
         return paymentOptionRepository.save(paymentOption);
@@ -84,7 +89,7 @@ public class PaymentOptionService {
             throw new RuntimeException("Encryption failed", e);
         }
     }
-    private String decrypt(String input) {
+    public String decrypt(String input) {
         try {
             Key key = new SecretKeySpec(ENCRYPTION_KEY.getEncoded(), AES_ALGORITHM);
             Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);

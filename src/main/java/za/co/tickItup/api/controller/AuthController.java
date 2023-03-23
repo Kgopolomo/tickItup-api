@@ -1,6 +1,7 @@
 package za.co.tickItup.api.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -8,10 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import za.co.tickItup.api.entity.UserProfile;
 import za.co.tickItup.api.request.LoginRequest;
 import za.co.tickItup.api.response.ResponseHandler;
@@ -38,6 +36,14 @@ public class AuthController {
     public ResponseEntity<Object> login(@RequestBody LoginRequest loginRequest) {
 
         return ResponseHandler.responseBuilder(null, HttpStatus.OK, userProfileService.login(loginRequest));
+    }
+
+    @Operation(summary = "user profile", description = "", tags = {"auth"})
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "successful operation", content = @Content(schema = @Schema(implementation = LoginRequest.class)))})
+    @GetMapping("/user")
+    public ResponseEntity<Object> getUserProfile(@Parameter String username) {
+
+        return ResponseHandler.responseBuilder(null, HttpStatus.OK, userProfileService.getUserProfile(username));
     }
 
 }
